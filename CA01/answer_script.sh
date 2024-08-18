@@ -32,7 +32,73 @@ printUserNamesAndLength() {
     done
 }
 
+stripPermissions() {
+    if [ $# -ne 1 ]
+    then
+        echo "No arg provided"
+        exit 1
+    fi
 
+    # Check if directory name is provided
+    if [ -z "$1" ]; then
+        echo "Usage: $1 directory_name"
+        exit 1
+    fi
+
+    # Check if the provided argument is a directory
+    if [ ! -d "$1" ]; then
+        echo "Error: $1 is not a directory."
+        exit 1
+    fi
+
+    echo "Before"
+    ls -l "$1"
+
+    chmod -R go-rwx "$1"
+
+    echo "After"
+    ls -l "$1"
+
+    echo "Permissions removed for all files in $1."
+}
+
+sortEmpFileAndAlias () {
+    if [ $# -ne 1 ]
+    then
+        echo "No arg provided"
+        return 1
+    fi
+
+    if [ ! -f "$1" ]
+    then
+        echo "No such file"
+        return 1
+    fi
+
+    employeeFile="$1"
+
+
+    alias sortme="sort -k3,3 -k1,1 "$employeeFile""
+}
+
+VII () {
+
+    if [ $# -ne 1 ]
+    then
+        echo "No args"
+        return 1
+    fi
+
+    if [ ! -f "$1" ]
+    then
+        echo "No such file"
+        return 1
+    fi
+
+    file="$1"
+
+    egrep "[A-Z]{2} [A-Z]" "$file"
+}
 
 # Main menu-driven script
 while true; do

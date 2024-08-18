@@ -10,3 +10,9 @@ caaadaa
 logfile.dat
 sum.pl
 add_int.sh
+John AB C is working in the IT department.
+The CEO is MR X.
+This is a test case for the command.
+Bob XY Z is assigned to the project.
+This line doesn't match.
+AA B is an example.
