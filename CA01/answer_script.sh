@@ -130,6 +130,35 @@ countFileTypes() {
     done
 }
 
+display_large_files() {
+    local size="$1"      # Number of bytes to compare against
+    shift                # Remove the first argument (size) from the list
+    local files="$@"     # Remaining arguments are file names
+
+    if [ -z "$size" ]; then
+        # If no size argument is given
+        >&2 echo "Error: Size argument (SZ) is missing."
+        exit 1
+    fi
+
+    if [ "$#" -eq 0 ]; then
+        # If no file arguments are given
+        echo "No files to process."
+        exit 0
+    fi
+
+    for file in "$files"; do
+        if [ -f "$file" ]; then
+            # Check if the file exists and is a regular file
+            file_size=$(stat -c%s "$file")
+            if [ "$file_size" -gt "$size" ]; then
+                # Display the file contents if its size is greater than the given size
+                cat "$file"
+            fi
+        # File does not exist or is not a regular file, so ignore and continue
+        done
+}
+
 # Main menu-driven script
 while true; do
     echo "Menu:"
