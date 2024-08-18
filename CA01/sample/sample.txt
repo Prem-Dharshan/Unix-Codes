@@ -7,3 +7,6 @@ baaad
 bdaaaaa
 babaadaa
 caaadaa
+logfile.dat
+sum.pl
+add_int.sh
