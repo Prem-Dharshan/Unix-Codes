@@ -100,6 +100,36 @@ VII () {
     egrep "[A-Z]{2} [A-Z]" "$file"
 }
 
+countFileTypes() {
+    local dir="$1"
+    
+    # Initialize counters
+    REG=0
+    DIR=0
+    SL=0
+
+    # Loop through the first column of 'ls -l' output (i.e., file type)
+    for i in $(ls -l "$dir" | cut -c1)
+    do
+        # Check the type of each file
+        if [ "$i" = '-' ]; then
+            REG=$(expr $REG + 1)
+        elif [ "$i" = 'd' ]; then
+            DIR=$(expr $DIR + 1)
+        elif [ "$i" = 'l' ]; then
+            SL=$(expr $SL + 1)
+        else
+            continue
+        fi
+    done
+
+    # Print the counts of each file type
+    printf "%-20s %s\n" "Type of files" "Count"
+    for var in REG DIR SL; do
+        printf "%-20s %s\n" "$var" "$(eval echo \$$var)"
+    done
+}
+
 # Main menu-driven script
 while true; do
     echo "Menu:"
