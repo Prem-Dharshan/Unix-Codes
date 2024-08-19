@@ -205,6 +205,22 @@ findFdir() {
     ls -p sample | egrep "^f.*/$"
 } 
 
+smallestSizedFiles() {
+    ls -l | tail +2 | tr -s " " | grep -v / | cut -d' ' -f9,5 | sort -k1n | head -n2 
+}
+
+difference() {
+    diff sample/report/file01 sample/report/file02
+}
+
+findgrpperm() {
+    find ~ -maxdepth 1 -type f -perm -g=w
+}
+
+toupper() {
+    ls | tr [:lower:] [:upper:]
+}
+
 
 
 # Main menu-driven script
