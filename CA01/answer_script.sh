@@ -159,6 +159,54 @@ display_large_files() {
         done
 }
 
+organize_files_by_extension() {
+    local DIR="$1"
+    local BACKUP="$2"
+
+    # Create the backup directory and the no_exten directory if they don't exist
+    if [ ! -d "$BACKUP" ]; then
+        mkdir -p "$BACKUP/no_exten/"
+    fi
+
+    # List only files in the directory
+    local files=$(ls -p "$DIR" | grep -v "/")
+    echo "$files"
+
+    for file in $files; do
+        # Extract the name and extension using cut
+        local name=$(echo "$file" | cut -d'.' -f1)
+        local exten=$(echo "$file" | cut -d'.' -f2-)
+
+        echo "Name: $name"
+        echo "Extension: $exten"
+
+        # Check if the file has no extension
+        if [ "$exten" = "$file" ]; then
+            cp "$DIR/$file" "$BACKUP/no_exten/"
+            continue
+        fi
+
+        # Check if the directory for this extension exists
+        if [ -d "$BACKUP/$exten" ]; then
+            cp "$DIR/$file" "$BACKUP/$exten/"
+        else
+            mkdir "$BACKUP/$exten"
+            cp "$DIR/$file" "$BACKUP/$exten/"
+        fi
+    done
+}
+
+pipeTee() {
+    ls | tee >(wc -l)
+    ls | tee /dev/tty  |wc -l
+}
+
+findFdir() {
+    ls -p sample | egrep "^f.*/$"
+} 
+
+
+
 # Main menu-driven script
 while true; do
     echo "Menu:"
