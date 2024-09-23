@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <fcntl.h>
+#include <fcntl.h> // For file handling
 #include <unistd.h>
 
 int main() {
