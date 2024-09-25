@@ -1,0 +1,228 @@
+ls command
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<dirent.h>
+struct dirent *dptr;
+int main(int argc, char *argv[])
+{
+char buff[100];
+DIR *dirp;
+printf("\n\n ENTER DIRECTORY NAME");
+scanf("%s", buff);
+if((dirp=opendir(buff))==NULL)
+{
+printf("The given directory does not exist");
+exit(1);
+}
+while(dptr=readdir(dirp))
+{
+printf("%s\n",dptr->d_name);
+}
+closedir(dirp);
+}
+
+Cp command
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<stdio.h>
+#include<fcntl.h>
+#include<unistd.h>
+int main( int argc,char *argv[] )
+{
+int i,fd1,fd2;
+char *file1,*file2,buf[2];
+file1=argv[1];
+file2=argv[2];
+printf("file1=%s file2=%s",file1,file2);
+fd1=open(file1,O_RDONLY,0777);
+fd2=creat(file2,0777);
+while(i=read(fd1,buf,1)>0)
+write(fd2,buf,1);
+remove(file1);
+close(fd1);
+close(fd2);
+}
+
+Cat command
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<stdio.h>
+#include<fcntl.h>
+#include<unistd.h>
+int main( int argc,char *argv[3] )
+{
+int fd,i;
+char buf[2];
+fd=open(argv[1],O_RDONLY,0777);
+if(fd==-argc)
+{
+printf("file open error");
+}
+else
+{
+while((i=read(fd,buf,1))>0)
+{
+printf("%c",buf[0]);
+}
+close(fd);
+}
+}
+
+Inode information
+
+#include<stdio.h>
+#include<sys/stat.h>
+#include<time.h>
+int main(int argc,char *argv[])
+{
+int i,j;
+struct stat a;
+for (i=1;i<argc;i++)
+{
+printf("%s : ",argv[i]);
+stat(argv[i],&a);
+if(S_ISDIR(a.st_mode))
+{
+}
+else
+{
+}
+printf("is a Directory file\n");
+printf("is Regular file\n");
+printf("******File Properties********\n");
+printf("Inode Number:%d\n",a.st_ino);
+printf("UID:%o\n",a.st_uid);
+printf("GID:%o\n",a.st_gid);
+printf("No of Links:%d\n",a.st_nlink);
+printf("Last Access time:%s",asctime(localtime(&a.st_atime)));
+printf("Permission flag:%o\n",a.st_mode%512);
+printf("size in bytes:%d\n",a.st_size);
+printf("Blocks Allocated:%d\n",a.st_blocks);
+printf("Last modification time %s\n",ctime(&a.st_atime));
+}
+}
+
+Simple Fork and Exec Example
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+void main()
+{
+        int forkresult;
+
+        printf("I am the parent. Remember My Process-id! : %d\n", getpid());
+        printf("Parent now going to fork ... \n");
+
+        forkresult=fork();
+
+        if(forkresult==-1)
+        {
+                printf("Fork failed\n");
+                exit(0);
+        }
+        else if(forkresult!=0)
+        {
+                printf("Parent will execute this code\n");
+                printf("Parent prints:My child's pid is %d\n", forkresult);
+                wait(NULL);
+                printf("Parent executes pwd\n");
+                execlp("pwd","pwd",NULL);
+                printf("This line gets printed when the above exec statement pwd fails\n");
+        }
+        else
+        {
+                printf("Hi ! I am the child with process-id %d.\n",getpid());
+                printf("I'm now going to execute ls!\n\n\n");
+                execlp ("ls", "ls", NULL);
+                printf ("Child prints %d: AAAAH ! ! My EXEC failed ! ! ! !\n", getpid());
+                exit(1);
+        }
+        printf ("Process id %d prints : like father like son. \n", getpid());
+}
+
+Exit status of child 
+#include<unistd.h>
+#include<sys/wait.h>
+#include<stdio.h>
+#include<sys/types.h>
+#include<fcntl.h>
+#include<unistd.h>
+#include<stdlib.h>
+
+int main()
+{
+        int pipe1fd[2];
+
+        pid_t pid;
+        int status;
+
+        pipe(pipe1fd);
+
+        switch(pid=fork())
+        {
+                case -1:  printf("can't fork");
+                          exit(-1);
+                case 0:
+                          dup2(pipe1fd[1],1);
+                          close(pipe1fd[0]);
+                          execlp("pwd","pwd",NULL);
+                default:
+                          wait(&status);
+                          dup2(pipe1fd[0],0);
+                          close(pipe1fd[1]);
+                          execlp("wc","wc",NULL);
+        }
+}
+
+// one process writes numbers
+//  other one prints the even numbers only
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+int main(){
+	int fd = open("testfile.txt", O_RDWR | O_CREAT | O_TRUNC, 0666);
+	if(fd<0){
+		perror("File opening failed.");
+		exit(-1);
+	}
+	pid_t p = fork();
+	if (p  < 0){
+		perror("Fork failed.");
+		exit(-1);
+	}
+	else if(p == 0){ //child
+	     	char c[2];
+		for(int i=0; i< 9; i++){
+			printf("IN CHILD : %d\n", i);
+			int size = sprintf(c,"%d",i);
+			lseek(fd,0,SEEK_SET);
+			write(fd,c,size);
+			sleep(2);
+		}
+		lseek(fd,0,SEEK_SET);
+		write(fd,"?",2);
+		exit(1);
+	}
+	else{ //parent
+		char c[2];
+		sleep(4);
+		lseek(fd,0,SEEK_SET);
+	   	int b = read(fd,c,2);
+	       	printf("IN PARENT : ");
+		while(b>0){
+			if(c[0] == '?') break;
+			if( atoi(c) %2 == 0){
+				printf("%d\n",atoi(c));
+			}	
+			sleep(2);
+			lseek(fd,0,SEEK_SET);
+			b = read(fd,c,2);
+		}
+		waitpid(p,NULL,WNOHANG);
+	}
+	return 0;
+}
