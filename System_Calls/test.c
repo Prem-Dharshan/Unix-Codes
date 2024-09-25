@@ -7,12 +7,30 @@
 #include <string.h>
 
 
-int main() {
+int main(int argc, char argv[]) {
     
-    struct dirent *dptr;
+    int fd1, fd2;
+    char ch;
 
-    char* dir = "../System-Calls"
+    if (argc != 3) {
+        printf("Args error");
+        return 1;
+    }
 
+    fd1 = open(argv[1], O_RDONLY);
+
+    if (fd1 < 0) {
+        perror('sd');
+    }
+
+    fd2 = creat(argv[2], 0777);
+
+    if (fd2 < 0) {
+        perror("sd");
+    }
 
     
+
+
+    return 0;
 }
