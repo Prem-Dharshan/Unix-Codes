@@ -1,0 +1,329 @@
+Question 1
+
+Write a program that calls fork(). Before calling fork(), have the main process access a variable (e.g., x) and set its value to something (e.g., 100). What value is the variable in the child process? What happens to the variable when both the child and parent change the value of x?
+
+fork() creates copy of parent process. However, child and parent process have their own private address space exclusive of each other. Both process (child and parent) can't interfare in each other's address space (memory).
+So, each maintain their own copy of variables.
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main()
+{
+    int x;
+
+    x = 100;
+
+    int rc = fork();
+
+    if (rc == 0) // Child
+    {
+        printf("-------------------------------\n");
+        printf("Child process\n");
+        printf("-------------------------------\n");
+        printf("Value of X: %d\n", x);
+        x = 200;
+        printf("New Value of x: %d\n", x);
+        
+    }
+    else if (rc > 0) // Parent
+    {
+        wait(NULL);
+        printf("-------------------------------\n");
+        printf("Parent process\n");
+        printf("-------------------------------\n");
+        printf("Value of X: %d\n", x);
+        x = 300;
+        printf("New Value of x: %d\n", x);
+    }
+    else // error
+    {
+        fprintf(stderr, "Error creating process");
+    }
+
+Question 2
+
+Write a program that opens a file (with the open() system call) and then calls fork() to create a new process. Can both the child and parent access the file descriptor returned by open()? What happens when they are writing to the file concurrently, i.e., at the same time?
+
+Both child and parent can access the file descriptor opened using open().
+Both are able to write to the file but the order in which they do is un-deterministic (if we don't use wait()).
+
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <stdlib.h>
+int main()
+{
+    struct stat sb;
+    int my_file = open("hello.txt", O_CREAT | O_RDWR, S_IRWXU);
+    
+    int rc = fork();
+
+    if (rc == 0)
+    {
+        const char * child_msg = "Hello, I am child process. Writing on you\n";
+        printf("**** Child process writing on file ****\n");
+        write(my_file, child_msg , strlen(child_msg));
+        exit(0);
+    }
+    else if (rc > 0)
+    {
+        wait(NULL);
+        const char * parent_msg = "Hello, I am parent process. Writing on you\n";
+        printf("**** Parent process writing on file ****\n");
+        write(my_file, parent_msg, strlen(parent_msg));
+    }
+    sync();
+    fstat(my_file, &sb);
+    lseek(my_file, 0, SEEK_SET);
+    char * buffer = malloc(sb.st_size);
+    read(my_file, buffer, sb.st_size);
+
+    printf("Content of file: \n%s", buffer);
+    close(my_file);
+    return 0;
+}
+
+Question 3
+
+Write another program using fork(). The child process should print “hello”; the parent process should print “goodbye”. You should try to ensure that the child process always prints first; can you do this without calling wait() in the parent?
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+
+#define true 1
+#define false 1
+int main()
+{
+    int backend_file = open("backend_file.txt", O_CREAT | O_RDWR | O_TRUNC, S_IRWXU);
+    int rc = fork();
+
+    if (rc == 0) // child process
+    {
+        write(backend_file, "true", 4);
+        printf("I am child process\n");
+        printf("hello\n");
+        close(backend_file);
+    }
+    else if (rc > 0)
+    {
+        char buffer[4];
+        buffer[4] = '\0';
+        while (strcmp(buffer, "true\0") != 0)
+        {
+            // I am closing and opening file again so that our program can see updated content.
+            close(backend_file);
+            backend_file = open("backend_file.txt", O_CREAT | O_RDWR, S_IRWXU);
+            read(backend_file, buffer, 4);
+            usleep(10 * 1000); // sleep for 10 milli-seconds
+        }
+
+        printf("I am parent process\n");
+        printf("goodbye\n");
+    }
+    close(backend_file);
+    return 0;
+}
+
+Question 4
+
+Write a program that calls fork() and then calls some form of exec() to run the program /bin/ls. See if you can try all of the variants of exec(), including execl(), execle(), execlp(), execv(), execvp(), and execvP(). Why do you think there are so many variants of the same basic call?
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+
+int main()
+{
+    int rc = fork();
+
+    if (rc == 0) // child
+    {
+        printf("***** Executing Child Process ******\n");
+        char * const argv[] = {"ls", NULL};
+        char * const envp[] = {NULL};
+
+        // ****** Uncomment only 1 of these ********* /
+
+        //execl("/bin/ls", "ls", NULL);
+        //execlp("ls", "ls", NULL);
+        //execle("/bin/ls", "ls", NULL, envp);
+        
+        //execv("/bin/ls", argv);
+        //execvp("ls", argv);
+        //execvpe("ls", argv, envp); // not declared on my pc. May be work on yours.
+    }
+    else if (rc > 0) // parent
+    {
+        wait(NULL);
+    }
+    else
+    {
+        fprintf(stderr, "Error occurred during fork()");
+    }
+}
+
+Question 5
+
+Now write a program that uses wait() to wait for the child process to finish in the parent. What does wait() return? What happens if you use wait() in the child?
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main()
+{
+    int rc = fork();
+
+    if (rc == 0) // child process
+    {
+        int wc = wait(NULL);
+        printf("I am child process\n");
+        printf("Return code from wait() is %d\n", wc);
+    }
+    else if (rc > 0) // parent process
+    {
+        printf("I am parent process\n");
+    }
+    else
+    {
+        fprintf(stderr, "Error Occurred during fork()");
+    }
+}
+
+Write a slight modification of the previous program, this time using waitpid() instead of wait(). When would waitpid() be useful?
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+
+int main()
+{
+    int rc = fork();
+    
+    if (rc == 0) // child
+    {
+        printf("I am child process. My PID is %d\n", getpid());
+        exit(0);
+    }
+    else if (rc > 0)
+    {
+        int status;
+        waitpid(rc, &status, 0);
+        printf("I am parent process. My PID  is %d\n", getpid());        
+    }
+    else
+    {
+        fprintf(stderr, "Error occurred during fork()");
+    }
+}
+
+Write a program that creates a child process, and then in the child closes standard output (STDOUT FILENO). What happens if the child calls printf() to print some output after closing the descriptor?
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main()
+{
+    int rc = fork();
+
+    if (rc == 0) // child process
+    {
+        close(STDOUT_FILENO);
+        printf("Hello World. Can you see this?\n");
+    }
+    else if (rc > 0)
+    {
+        wait(NULL);
+        printf("I am parent process\n");
+    }
+    else 
+    {
+        printf("Error occurred during fork()\n");
+    }
+}
+
+Question 8
+
+Write a program that creates two children, and connects the standard output of one to the standard input of the other, using the pipe() system call.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#define BUFSZE 32
+
+/* #8 Write a program that creates two children, and connects the standard
+output of one to the standard input of the other, using the
+pipe() system call */
+
+int
+main(int argc, char *argv[])
+{
+    // Setup our pipe
+    char buff[BUFSZE];
+    int p[2];
+
+    if (pipe(p) < 0)
+      exit(1);
+
+    int rc1 = fork();
+    if (rc1 < 0) {
+        // fork failed; exit
+        fprintf(stderr, "fork #1 failed\n");
+        exit(1);
+    } else if (rc1 == 0) {
+	     // Child #1
+       printf(" Child #1 ");
+       close(p[0]);   // This one only writes
+       dup2(p[1], 1); // redirect stdout to pipe write
+       printf("This is getting sent to the pipe");
+    } else {
+        // Parent process
+        int rc2 = fork();
+        if (rc2 < 0) {
+          fprintf(stderr, "fork #2 failed\n");
+          exit(1);
+        } else if (rc2 == 0) {
+          // Child #2
+          printf(" Child #2 ");
+          close(p[1]);      // Only read here
+          dup2(p[0], 0);    // Redirect stdin to pipe read
+
+          /* Strangely it looks like ALL of the stdout from
+           * fork 1 is being sent to the pipe, even the stuff
+           * sent to stdout BEFORE dup2 is called. This can be
+           * shown by adjusting the size of the buffer below
+           * to something small like 6 and seeing what gets
+           * printed out... weird! */
+
+          char buff[512];   // Make a buffer
+          read(STDIN_FILENO, buff, 512); // Read in from stdin
+          printf("%s", buff);     // Print out buffer
+
+        } else {
+          // Initial parent process
+          /* If we wait for rc1 then it could finish before rc2 is done,
+           * giving us some strange behavior. */
+
+          int wc = waitpid(rc2, NULL, 0);
+          printf("goodbye");
+        }
+    }
+    return 0;
+}
+
