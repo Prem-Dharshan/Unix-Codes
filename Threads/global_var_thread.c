@@ -61,6 +61,6 @@ void *factorial(void *arg) {
 void *exponent(void *arg) {
     t_args *args = (t_args*)arg;
     t_args obj = *args;
-    power = pow(obj.base, obj.exp);
+    power = pow(args->base, args->exp);
     pthread_exit(0);
 }

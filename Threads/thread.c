@@ -19,8 +19,8 @@ int main() {
     int t2_ret = pthread_create(&t2, NULL, t_routine, (void *) msg2);
 
     if (t1_ret != 0 || t2_ret != 0) {
-        printf("Error creating threads\n");
-        return 1;
+        perror("Error creating threads\n");
+        exit(1);
     }
 
     printf("Threads Created\n");
