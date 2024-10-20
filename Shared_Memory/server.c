@@ -48,7 +48,7 @@ int main()
 
     printf("Server: Detaching shared memory...\n");
     shmdt(shm_addr);
-    shmctl(shm_id, IPC_RMID, NULL); // Remove the shared memory segment
+    shmctl(shm_id, IPC_RMID, NULL);
 
     return 0;
 }
